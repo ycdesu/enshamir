@@ -4,7 +4,6 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
-	"runtime"
 	"strings"
 
 	"golang.org/x/crypto/argon2"
@@ -39,7 +38,7 @@ func (p argon2idParams) String() string {
 var defaultArgon2idParams = argon2idParams{
 	memory:     2048 * 1024, // ~2GB
 	times:      4,
-	thread:     uint8(runtime.NumCPU()),
+	thread:     1,
 	saltLength: 16,
 	keyLength:  32,
 }
