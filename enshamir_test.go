@@ -3,8 +3,6 @@ package enshamir
 import (
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func TestEncryptSplit(t *testing.T) {
@@ -15,7 +13,9 @@ func TestEncryptSplit(t *testing.T) {
 	threshold := 3
 
 	hashedPassword, shares, err := EncryptSplit(encryptionPassword, secret, parts, threshold)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Verify if we can really combine and decrypt the shares.
 	validIndexes := [][]int{{
@@ -35,11 +35,17 @@ func TestEncryptSplit(t *testing.T) {
 		for _, i := range indexes {
 			s = append(s, shares[i])
 		}
-		assert.True(t, len(s) >= threshold)
+		if len(s) < threshold {
+			t.FailNow()
+		}
 
 		plaintext, err := CombineDecrypt(encryptionPassword, hashedPassword, s)
-		if assert.NoError(t, err) {
-			assert.Equal(t, string(secret), string(plaintext))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if string(secret) != string(plaintext) {
+			t.FailNow()
 		}
 	}
 
@@ -49,18 +55,29 @@ func TestEncryptSplit(t *testing.T) {
 		for _, i := range indexes {
 			s = append(s, shares[i])
 		}
-		assert.True(t, len(s) < threshold)
+
+		// This case is ensure we can't restore our plaintext if the number of shares is not enough
+		if len(s) >= threshold {
+			t.FailNow()
+		}
 
 		// It's expected to fail to decrypt the shares since we don't have enough shares.
 		_, err := CombineDecrypt(encryptionPassword, hashedPassword, s)
-		assert.True(t, strings.Contains(err.Error(), "unable to decrypt the secret"))
+		if !strings.Contains(err.Error(), "unable to decrypt the secret") {
+			t.Fatal("unexpected err: " + err.Error())
+		}
 	}
 }
 
 func Test_randomBytes(t *testing.T) {
 	for length := 0; length <= 256; length++ {
 		b, err := randomBytes(uint32(length))
-		assert.NoError(t, err)
-		assert.Len(t, b, length)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if len(b) != length {
+			t.Fatalf("length does not match, expected: %d, actual: %d", length, len(b))
+		}
 	}
 }

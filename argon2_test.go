@@ -2,20 +2,24 @@ package enshamir
 
 import (
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 )
 
 func Test_hashPasswordWithSalt(t *testing.T) {
-	passwords := []string{"1", "a", "", "0", "~", "hello1234567890!@#$%^&*()_+~`\""}
+	passwords := []string{"112345678912345678912345678923456789112345678912345678912345678923456789"}
 
 	for _, p := range passwords {
 		salt, err := randomBytes(defaultArgon2idParams.saltLength)
-		assert.NoError(t, err)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		hashedKey := hashPasswordWithSalt([]byte(p), salt)
-		assert.Len(t, hashedKey, int(defaultArgon2idParams.keyLength))
+		if len(hashedKey) != int(defaultArgon2idParams.keyLength) {
+			t.Fatal("hashed key length is not correct")
+		}
 
-		assert.NoError(t, verifyPassword(p, encode(defaultArgon2idParams, salt, hashedKey)))
+		if err := verifyPassword(p, encode(defaultArgon2idParams, salt, hashedKey)); err != nil {
+			t.Fatal(err)
+		}
 	}
 }
