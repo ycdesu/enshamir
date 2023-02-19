@@ -1,39 +1,21 @@
 # enshamir
 
-`enshamir` is a command line tool for splitting and combining secrets using Shamir's Secret Sharing Scheme. The secret
-is encrypted by AES-256-GCM before splitting.
+`enshamir` is a powerful command line utility designed for splitting and combining secrets using Shamir's Secret Sharing Scheme, which is a cryptographic algorithm used to protect sensitive information. 
 
-## Split
+With `enshamir`, you can safely split a secret into multiple shares, each of which contains a piece of the original secret, and then combine those shares to reconstruct the original secret. To ensure maximum security, `enshamir` encrypts the secret using AES-256-GCM before splitting it, making it virtually impossible for unauthorized parties to access the secret.
 
-```shell
-go run ./cmd/enshamir split \
-  --secret-file <secret-file> \
-  --parts <number-of-generated-shares> \
-  --threshold <minimum-number-of-shares-to-reconstruct> \
-  --output-dir <output-directory>
-```
 
-Let's say we want to split a secret into 5 shares, and 3 of them are required to recover the secret. `enshamir` encrypts
-the secret before splitting it, so we need to provide a password to encrypt the secret.
+## Splitting a Secret
 
-There are 3 steps in the splitting process:
+To split a secret into shares using `enshamir`, follow these steps:
 
-1. The password is hashed to a 32 bytes key by `argon2id`. A random 16 bytes salt is also generated.
-2. The secret is encrypted by `AES-256-GCM` with the 32 bytes key.
-3. The encrypted secret is split into 5 shares using Shamir's Secret Sharing Scheme.
-
-You must save the random 16 bytes salt file and 3 shares to recover the secret.
-
-The first step is preparing a secret file. We create a test file `/tmp/test-secret` by `echo`.
+1. Prepare the secret file that you want to split. You can create a test file at `/tmp/test-secret` by running:
 
 ```shell
 echo "my secret" > /tmp/test-secret
 ```
 
-Then we split the secret into 5 shares which will be saved in `/tmp/splitted-secrets`. The `--threshold 3` means we need
-at least 3 shares to reconstruct the secret.
-
-`enshamir` will ask you to enter a password to encrypt the secret. The password is hashed to a 32 bytes key by `argon2id`.
+2. Split the secret into 5 shares using the following command. This will save the shares in `/tmp/splitted-secrets`:
 
 ```shell
 go run ./cmd/enshamir split \
@@ -43,46 +25,54 @@ go run ./cmd/enshamir split \
   --output-dir /tmp/splitted-secrets
 ```
 
-There will be a `MUST-BACK-UP-SALT` file and a `shares` directory under `/tmp/splitted-secrets`. The generated files are:
-```
-# random 16 bytes salt which is necessary to hash the password. You must back up this file.
-/tmp/splitted-secrets/MUST-BACK-UP-SALT
+In this example, we are splitting the secret into 5 shares, and we need at least 3 shares to reconstruct the secret.
+Note that `enshamir` encrypts the secret before splitting it, so you will be asked to provide a password to encrypt the secret.
+The password is hashed to a 32-byte key by `argon2id`, and a random 16-byte salt is also generated to add an extra layer of security.
 
-# 5 shares are generated. You must backup at least 3 shares.
-/tmp/splitted-secrets/SPLITTED-SECRET-1
-/tmp/splitted-secrets/SPLITTED-SECRET-2
-/tmp/splitted-secrets/SPLITTED-SECRET-3
-/tmp/splitted-secrets/SPLITTED-SECRET-4
-/tmp/splitted-secrets/SPLITTED-SECRET-5
-```
-
-You **MUST** back up the `MUST-BACK-UP-SALT` file and at least 3 shares.
-
-I strongly recommend you to verify the generated shares by combining them immediately.
-
-## Combine
+3. When the splitting process is complete, `enshamir` will generate the following files under `/tmp/splitted-secrets`:
 
 ```shell
-go run ./cmd/enshamir combine \
-  --salt-file <salt-file-path> \
-  --shares-dir <shares-directory> \
-  --secret-file <output-secret-file-path>
+/tmp/splitted-secrets/MUST-BACK-UP-SALT     # a random 16-byte salt file used to hash the user password
+/tmp/splitted-secrets/SPLITTED-SECRET-1     # share 1
+/tmp/splitted-secrets/SPLITTED-SECRET-2     # share 2
+/tmp/splitted-secrets/SPLITTED-SECRET-3     # share 3
+/tmp/splitted-secrets/SPLITTED-SECRET-4     # share 4
+/tmp/splitted-secrets/SPLITTED-SECRET-5     # share 5
 ```
 
-After splitting the secret into shares, I strongly recommend you to combine parts of shares to the secret immediately.
+It is **important** to back up the `MUST-BACK-UP-SALT` file and at least 3 shares to be able to recover the secret later.
+The `MUST-BACK-UP-SALT` file is necessary to reconstruct the 32-byte key used to encrypt the secret, while at least 3 shares are needed to recover the encrypted secret.
 
-Assume we have 1 salt file and 3 shares.
+4. To verify that the generated shares are valid, you can immediately combine them using the `enshamir` combine command.
+If the secret is properly recovered, this will ensure that the shares were generated correctly.
 
-```
+## Combining Shares
+
+Once you have split the secret into shares, it's recommended to combine the shares as soon as possible.
+
+Assuming you have a salt file and three shares, and the secret content is "my secret". The shares are saved in the following files:
+
+```shell
 /tmp/MUST-BACK-UP-SALT
-
 /tmp/parts-of-secrets/SPLITTED-SECRET-1
 /tmp/parts-of-secrets/SPLITTED-SECRET-3
 /tmp/parts-of-secrets/SPLITTED-SECRET-5
 ```
 
-We have to pass the salt file path and shares directory to `enshamir` to combine the shares. `--secret-file` is the path
-of combined secret file.
+To combine the shares, use the `enshamir` combine command with the following arguments:
+
+```shell
+go run ./cmd/enshamir combine \
+  --salt-file <path-to-salt-file> \
+  --shares-dir <path-to-shares-directory> \
+  --secret-file <path-to-combined-secret>
+```
+
+Here, you should replace `path-to-salt-file` with the actual path to your salt file, `path-to-shares-directory` with the 
+actual path to your directory containing the split shares, and `path-to-combined-secret` with the actual path to the file 
+where you want to store the combined secret.
+
+So the combining command is:
 
 ```shell
 go run ./cmd/enshamir combine \
@@ -91,10 +81,11 @@ go run ./cmd/enshamir combine \
   --secret-file /tmp/combined-secret
 ```
 
-The combined secret is written to `/tmp/combined-secret`.
+After running the `enshamir` combine command, the combined secret will be saved to `path-to-combined-secret`. You can 
+verify the content of this file by running:
 
 ```shell
 cat /tmp/combined-secret
 ```
 
-The content should be `my secret`.
+The content of the file should be `my secret`.
