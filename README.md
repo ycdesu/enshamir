@@ -4,6 +4,18 @@
 
 With `enshamir`, you can safely split a secret into multiple shares, each of which contains a piece of the original secret, and then combine those shares to reconstruct the original secret. To ensure maximum security, `enshamir` encrypts the secret using AES-256-GCM before splitting it, making it virtually impossible for unauthorized parties to access the secret.
 
+## Installation
+
+### Homebrew
+
+```shell
+brew install ycdesu/tap/enshamir
+```
+
+### Go
+```shell
+go install github.com/ycdesu/enshamir/cmd/enshamir@latest
+```
 
 ## Splitting a Secret
 
