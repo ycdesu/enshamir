@@ -30,7 +30,7 @@ echo "my secret" > /tmp/test-secret
 2. Split the secret into 5 shares using the following command. This will save the shares in `/tmp/splitted-secrets`:
 
 ```shell
-go run ./cmd/enshamir split \
+enshamir split \
   --secret-file /tmp/test-secret \
   --parts 5 \
   --threshold 3 \
@@ -74,7 +74,7 @@ Assuming you have a salt file and three shares, and the secret content is "my se
 To combine the shares, use the `enshamir` combine command with the following arguments:
 
 ```shell
-go run ./cmd/enshamir combine \
+enshamir combine \
   --salt-file <path-to-salt-file> \
   --shares-dir <path-to-shares-directory> \
   --secret-file <path-to-combined-secret>
@@ -87,7 +87,7 @@ where you want to store the combined secret.
 So the combining command is:
 
 ```shell
-go run ./cmd/enshamir combine \
+enshamir combine \
   --salt-file /tmp/MUST-BACK-UP-SALT \
   --shares-dir /tmp/parts-of-secrets \
   --secret-file /tmp/combined-secret
